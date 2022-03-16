@@ -1,0 +1,45 @@
+#!/bin/bash
+
+function join_by {
+  local d=${1-} f=${2-}
+  if shift 2; then
+    printf %s "$f" "${@/#/$d}"
+  fi
+}
+
+to_mp4() {
+  for i in ~/"$files_folder"/*.m4v; do
+    ep=$(basename "$i")
+    ep_number=($ep[0])
+    ep=($ep)
+    # Remove the first segment of the name, the episode number
+    unset ep[0]
+    # Remove the last segment of the name, the file extension and what
+    # preceeded it, maybe (1080p).
+    unset ep[-1]
+    ep_name=$(join_by ' ' "${ep[@]}")
+
+    ffmpeg -i "$i" -c copy "~/$files_folder/output/$1 - S0$2E$ep_number - $ep_name.mp4"
+    echo $ep_number
+  done
+}
+
+main() {
+  files_folder=tv_dump
+  # mkdir ~/"$files_folder" &>/dev/null
+  # mkdir ~/"$files_folder"/output &>/dev/null
+  files_count=$(find ~/"$files_folder"/*.m4v | wc -l)
+  
+  echo Found "$files_count" m4v files in the ~/"$files_folder"
+
+  echo "What's the name of the TV Series?"
+  read series_name
+  echo "Which season number is this? Enter a number."
+  read season_number
+  
+  echo "Starting m4v -> mp4 conversion on $files_count files"
+  to_mp4 "$series_name" "$season_number" "$files_folder"
+  echo "Finished conversion"
+}
+
+main
